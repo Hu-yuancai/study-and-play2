@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp1",
+      "top": 491.02,
+      "left": 263.94,
+      "attrs": {}
+    },
+    {
+      "type": "board-ssd1306",
+      "id": "oled1",
+      "top": 417.54,
+      "left": 10,
+      "attrs": { "i2cAddress": "0x3c" }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 282.4,
+      "left": 270.77,
+      "attrs": { "volume": "0.8" }
+    },
+    {
+      "type": "wokwi-membrane-keypad",
+      "id": "keypad1",
+      "top": 114.8,
+      "left": 418.57,
+      "attrs": {}
+    },
+    { "type": "wokwi-ili9341", "id": "lcd1", "top": 60, "left": 76.67, "attrs": {} }
+  ],
+  "connections": [
+    [ "oled1:VCC", "esp1:3V3.1", "red", [ "v0" ] ],
+    [ "oled1:GND", "esp1:GND.1", "black", [ "v0" ] ],
+    [ "bz1:1", "esp1:GND.2", "green", [ "v0" ] ],
+    [ "lcd1:VCC", "esp1:3V3.2", "red", [ "v0" ] ],
+    [ "lcd1:GND", "esp1:GND.3", "black", [ "v0" ] ],
+    [ "lcd1:CS", "esp1:10", "green", [ "v0" ] ],
+    [ "lcd1:RST", "esp1:8", "green", [ "v0" ] ],
+    [ "lcd1:D/C", "esp1:4", "green", [ "v0" ] ],
+    [ "lcd1:MOSI", "esp1:11", "green", [ "v0" ] ],
+    [ "lcd1:LED", "esp1:3V3.2", "green", [ "v0" ] ],
+    [ "lcd1:MISO", "esp1:13", "green", [ "v0" ] ],
+    [ "oled1:SCL", "esp1:7", "green", [ "v0" ] ],
+    [ "lcd1:SCK", "esp1:12", "green", [ "v0" ] ],
+    [ "esp1:6", "oled1:SDA", "green", [ "h0" ] ],
+    [ "keypad1:R1", "esp1:1", "green", [ "v0" ] ],
+    [ "keypad1:R2", "esp1:2", "green", [ "v0" ] ],
+    [ "keypad1:R3", "esp1:3", "green", [ "v0" ] ],
+    [ "keypad1:R4", "esp1:5", "green", [ "v0" ] ],
+    [ "keypad1:C1", "esp1:14", "green", [ "v0" ] ],
+    [ "keypad1:C2", "esp1:15", "green", [ "v0" ] ],
+    [ "keypad1:C3", "esp1:16", "green", [ "v0" ] ],
+    [ "esp1:17", "keypad1:C4", "green", [ "h0" ] ],
+    [ "esp1:18", "bz1:2", "green", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}

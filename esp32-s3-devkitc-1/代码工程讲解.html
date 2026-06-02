@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代码工程讲解 · ESP32-S3 学习游戏一体机</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --card2:#1c2333; --line:#283042;
+    --txt:#e6edf3; --mut:#9aa5b8; --accent:#58c4ff; --green:#56d364;
+    --gold:#e3b341; --red:#f78166; --purple:#bc8cff; --human:#56d364; --ai:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--txt);line-height:1.75;font-size:16px}
+  header{padding:46px 20px 34px;text-align:center;
+    background:radial-gradient(1100px 380px at 50% -100px,#1b2a4a,transparent),var(--bg);
+    border-bottom:1px solid var(--line)}
+  header h1{margin:0 0 10px;font-size:30px}
+  header p{margin:4px 0;color:var(--mut)}
+  .wrap{max-width:960px;margin:0 auto;padding:0 18px 90px}
+  nav{position:sticky;top:0;z-index:30;background:rgba(13,17,23,.93);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:9px 0}
+  nav .inner{max-width:960px;margin:0 auto;padding:0 18px;display:flex;gap:7px;
+    flex-wrap:wrap;justify-content:center}
+  nav a{color:var(--mut);text-decoration:none;font-size:13px;padding:5px 10px;
+    border-radius:18px;border:1px solid transparent;white-space:nowrap}
+  nav a:hover{color:var(--txt);border-color:var(--line);background:var(--card)}
+  section{margin-top:44px;scroll-margin-top:58px}
+  h2{font-size:24px;border-left:4px solid var(--accent);padding-left:13px;margin:0 0 8px}
+  h3{font-size:19px;color:var(--accent);margin:28px 0 8px}
+  h4{font-size:16px;margin:18px 0 6px;color:var(--txt)}
+  .lead{color:var(--mut);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:14px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14.5px;border-radius:10px;overflow:hidden}
+  th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--card2);color:var(--accent);font-weight:600}
+  tr:last-child td{border-bottom:none}
+  code{background:#05070f;color:#7ee0b8;padding:2px 7px;border-radius:5px;font-family:ui-monospace,Consolas,monospace;font-size:13.5px}
+  pre{background:#05070f;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto}
+  pre code{background:none;padding:0;color:#cfe6ff}
+  ul,ol{padding-left:22px} li{margin:6px 0}
+  .tag-h,.tag-ai,.tag-hy{display:inline-block;padding:1px 9px;border-radius:6px;font-size:12px;font-weight:700;margin-right:6px}
+  .tag-h{background:#10311f;color:#7ee787;border:1px solid #2c6b46}
+  .tag-ai{background:#2a1f3d;color:#d2a8ff;border:1px solid #5a3a8a}
+  .tag-hy{background:#3a2f12;color:#e3b341;border:1px solid #7a5a2c}
+  .tip,.warn,.human{border-radius:12px;padding:13px 16px;margin:14px 0;border:1px solid}
+  .tip{background:#0d2235;border-color:#2c4a72}
+  .warn{background:#3a2512;border-color:#7a4a2c}
+  .human{background:#10261a;border-color:#2c6b46}
+  .tip .t,.warn .t,.human .t{font-weight:700;margin-right:6px}
+  .tip .t{color:var(--accent)} .warn .t{color:var(--gold)} .human .t{color:var(--green)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+  .filecard{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .filecard .fn{font-family:ui-monospace,monospace;color:var(--gold);font-weight:700;font-size:14px}
+  .filecard .meta{color:var(--mut);font-size:12.5px;margin:2px 0 8px}
+  .pin{font-family:ui-monospace,monospace;font-weight:700;color:#7ee0b8}
+  .big{font-size:30px;font-weight:800;color:var(--accent)}
+  hr{border:none;border-top:1px dashed var(--line);margin:24px 0}
+  footer{text-align:center;color:var(--mut);padding:30px;font-size:13px;border-top:1px solid var(--line)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:14px 0;font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛠️ 代码工程讲解</h1>
+  <p>ESP32-S3 多功能学习游戏一体机 · 整体思路 / 文件职责 / 引脚对应</p>
+  <p style="font-size:13px">面向汇报 · 约 5700 行 C/C++ · 10 功能模块 + 双屏 + 矩阵键盘 + PWM 音频</p>
+</header>
+
+<nav><div class="inner">
+  <a href="#how">怎么做的</a>
+  <a href="#arch">总体架构</a>
+  <a href="#flow">主程序流程</a>
+  <a href="#pins">引脚对应</a>
+  <a href="#drivers">底层驱动</a>
+  <a href="#piano">钢琴模块</a>
+  <a href="#games">其它游戏</a>
+  <a href="#study">学习模块</a>
+  <a href="#emoji">动态表情</a>
+  <a href="#shell">隐藏彩蛋</a>
+  <a href="#debug">调试历程</a>
+</div></nav>
+
+<div class="wrap">
+
+<section id="how">
+  <h2>一、这个工程是怎么做出来的（诚实说明）</h2>
+  <p class="lead">为了让汇报站得住脚，先把"人做了什么、AI 做了什么"讲清楚。我们的态度是：<b>工具用得坦荡，但工程判断在人。</b></p>
+
+  <div class="card">
+    <h4 style="margin-top:0">真实的开发时间线</h4>
+    <ol>
+      <li><b>起步——人。</b> 最初用 <b>Arduino IDE</b> 手写代码，从点亮一块屏、扫描键盘做起，搭出最初的框架。</li>
+      <li><b>钢琴音调——人的用心。</b> 钢琴模块的音高设计是重点，它<b>延续了我们之前用 C51 播放音乐的思路</b>（用方波频率对应音阶）；还专门另开测试工程，逐个校准 ESP32 在不同 PWM 频率下的真实听感音高。</li>
+      <li><b>引脚排布——人。</b> 引脚分配是我们查 ESP32-S3 规格书、避开复用/敏感引脚后定下来的（仿真时还踩过引脚冲突的坑），并画了 Proteus 原理图和引脚对应表指导接线。</li>
+      <li><b>实物搭建与调试——人。</b> 面包板接线、屏不亮/接口错位/供电欠压等一系列问题的排查，全是动手做出来的（详见最后"调试历程"）。</li>
+      <li><b>实物跑通后——AI 加速。</b> 平台稳定后，后续新增的多个模块（扫雷、贪吃蛇、俄罗斯方块、2048、背单词、数学速算、记忆翻牌、动态表情包等）我们较多地借助 AI 直接生成代码，大幅提速。</li>
+    </ol>
+  </div>
+
+  <div class="human"><span class="t">人类不可替代的作用</span>
+  即便后期用 AI 写代码，<b>"做什么、怎么算对、哪里不对"始终是人在判断</b>：
+  <ul style="margin:8px 0 0">
+    <li><b>反映真实需求</b>：提出"学习机要防沉迷"→ 设计游戏限时机制；发现键盘只有数字键 → 把数学/背单词改成选择题；觉得 ABCD 当方向反直觉 → 加 2/4/6/8 方向键。</li>
+    <li><b>实机调试与 debug</b>：钢琴判定线和得分时机对不上、飞机射击按了没反应、得分时白屏重启……这些都是真机上跑出来、再定位修复的。</li>
+    <li><b>工程取舍</b>：为什么用 ESP32 不用 51、为什么主屏英文副屏中文、表情包刷新频率怎么定，都是结合硬件约束做的判断。</li>
+  </ul>
+  </div>
+
+  <div class="tip"><span class="t">一句话汇报口径</span>“硬件方案、引脚设计、核心音频思路和全部实物调试是我们做的；功能模块的代码实现部分借助了 AI，但每个模块的需求定义、参数调整和真机验证都由我们完成——AI 是加速器，工程判断在我们手里。”</div>
+
+  <div class="legend">
+    <span><span class="tag-h">人主导</span>设计/调试/判断</span>
+    <span><span class="tag-hy">人机协作</span>人定需求+AI实现+人验证</span>
+    <span><span class="tag-ai">AI 为主</span>实物稳定后的增量模块</span>
+  </div>
+</section>
+
+<section id="arch">
+  <h2>二、总体架构：分层设计</h2>
+  <p class="lead">整个工程遵循一个清晰的分层思想：<b>把"怎么和硬件打交道"封装成驱动，上层游戏只管调用</b>。这正是接口编程的核心。</p>
+
+  <pre><code>┌─────────────────────────────────────────────┐
+│  应用层：10个功能模块 + 1个隐藏彩蛋             │
+│  钢琴 飞机 扫雷 蛇 俄罗斯 2048 / 番茄 背单词 数学 记忆 / Shell │
+├─────────────────────────────────────────────┤
+│  调度层：main.cpp 主程序                       │
+│  状态机(currentMode) + 菜单 + 游戏限时          │
+├─────────────────────────────────────────────┤
+│  驱动层：把硬件封装成函数                       │
+│  keyboard(键盘) lcd_driver(主屏) oled_driver(副屏) audio(音频) │
+├─────────────────────────────────────────────┤
+│  配置层：config.h 引脚与键值定义                │
+├─────────────────────────────────────────────┤
+│  硬件：ESP32-S3 + TFT + OLED + 4×4键盘 + 蜂鸣器 │
+└─────────────────────────────────────────────┘</code></pre>
+
+  <div class="tip"><span class="t">为什么这样分</span>好处是<b>解耦</b>：写一个新游戏（比如贪吃蛇）时，根本不用关心"屏幕怎么用 SPI 刷新""按键怎么扫描"，直接调 <code>lcdFillRect()</code>、<code>scanKeyboard()</code> 就行。这也是为什么实物跑通后能快速叠加新模块——驱动层是稳定的地基。</div>
+
+  <h3>文件总览（按层分类）</h3>
+  <table>
+    <tr><th>层</th><th>文件</th><th>职责</th><th>谁主导</th></tr>
+    <tr><td rowspan="2">配置</td><td class="pin">config.h</td><td>所有引脚号、键值常量、屏幕尺寸</td><td><span class="tag-h">人</span></td></tr>
+    <tr><td class="pin">game_common.h</td><td>游戏模式枚举、全局变量声明</td><td><span class="tag-h">人</span></td></tr>
+    <tr><td rowspan="4">驱动</td><td class="pin">keyboard.cpp</td><td>4×4 矩阵键盘行列扫描 + 消抖</td><td><span class="tag-h">人</span></td></tr>
+    <tr><td class="pin">lcd_driver.cpp</td><td>ILI9341 彩屏 SPI 驱动 + 帧缓冲</td><td><span class="tag-hy">人机</span></td></tr>
+    <tr><td class="pin">oled_driver.cpp</td><td>SSD1306 OLED I2C 驱动 + 表情 + 动画</td><td><span class="tag-hy">人机</span></td></tr>
+    <tr><td class="pin">audio.cpp</td><td>PWM 蜂鸣器（非阻塞发声）</td><td><span class="tag-h">人</span></td></tr>
+    <tr><td>调度</td><td class="pin">main.cpp</td><td>初始化、主循环、菜单、模式分发、游戏限时</td><td><span class="tag-hy">人机</span></td></tr>
+    <tr><td rowspan="6">游戏</td><td class="pin">piano_game.cpp</td><td>钢琴块（核心，677行）</td><td><span class="tag-h">人</span></td></tr>
+    <tr><td class="pin">plane_game.cpp</td><td>飞机大战</td><td><span class="tag-h">人</span></td></tr>
+    <tr><td class="pin">minesweeper.cpp</td><td>扫雷（662行）</td><td><span class="tag-ai">AI</span></td></tr>
+    <tr><td class="pin">snake_game.cpp</td><td>贪吃蛇</td><td><span class="tag-ai">AI</span></td></tr>
+    <tr><td class="pin">tetris_game.cpp</td><td>俄罗斯方块</td><td><span class="tag-ai">AI</span></td></tr>
+    <tr><td class="pin">game2048.cpp</td><td>2048</td><td><span class="tag-ai">AI</span></td></tr>
+    <tr><td rowspan="4">学习</td><td class="pin">study_buddy.cpp</td><td>番茄计时</td><td><span class="tag-h">人</span></td></tr>
+    <tr><td class="pin">vocab.cpp</td><td>背单词</td><td><span class="tag-ai">AI</span></td></tr>
+    <tr><td class="pin">math_game.cpp</td><td>数学速算</td><td><span class="tag-ai">AI</span></td></tr>
+    <tr><td class="pin">memory_game.cpp</td><td>记忆翻牌</td><td><span class="tag-ai">AI</span></td></tr>
+    <tr><td rowspan="2">扩展</td><td class="pin">ghost_shell.cpp + safe_ram.cpp</td><td>隐藏调试终端 + 沙盒内存</td><td><span class="tag-ai">AI</span></td></tr>
+    <tr><td class="pin">emoji_bitmaps.h</td><td>表情位图（脚本生成）</td><td><span class="tag-hy">人机</span></td></tr>
+  </table>
+</section>
+
+<section id="flow">
+  <h2>三、主程序流程（main.cpp）</h2>
+  <p class="lead">理解了 main.cpp，就理解了整个系统怎么转。它就是一个标准的"<b>初始化 → 无限循环</b>"的单片机程序。</p>
+
+  <h3>setup()：开机初始化（只跑一次）</h3>
+  <pre><code>Serial.begin(115200);   // 串口，用于调试日志
+safeRAMInit();          // 初始化彩蛋用的沙盒内存
+initAudio();            // 配置 PWM 音频
+initKeyboard();         // 配置键盘 GPIO（行输出、列上拉）
+initLCD();              // 初始化彩屏 SPI
+initOLED();             // 初始化 OLED I2C
+drawMenu();             // 画出主菜单</code></pre>
+  <div class="warn"><span class="t">这里藏着一个调试故事</span>原本这里有一句开机提示音 <code>playTone(880,100)</code>，后来发现它在上电最脆弱的瞬间叠加电流，会触发欠压重启，<b>被我们删掉了</b>。这就是"真机调试反推代码"的例子。</div>
+
+  <h3>loop()：主循环（每 16ms 一圈，约 60 帧/秒）</h3>
+  <pre><code>uint8_t key = scanKeyboard();   // 1. 扫描键盘，拿到当前按键
+audioUpdate();                  // 2. 推进非阻塞音效
+
+// 3. 游戏限时检查（防沉迷）：玩游戏累计超10分钟→踢回菜单
+if (isGameMode(currentMode)) { ...超时则回菜单... }
+
+// 4. 按当前模式，把按键交给对应模块处理
+switch (currentMode) {
+  case MODE_MENU:   handleMenu(key);    break;
+  case MODE_PIANO:  pianoGameLoop(key); break;
+  case MODE_SNAKE:  snakeGameLoop(key); break;
+  ... // 共10个功能 + Ghost Shell
+}
+delay(16);</code></pre>
+
+  <div class="tip"><span class="t">核心思想：状态机</span>用一个变量 <code>currentMode</code> 记住"现在在哪个功能"，主循环根据它把按键分发给对应模块。切换功能 = 改这个变量。这是单片机里管理多界面/多模式最经典的写法，也是课程里"程序状态机"的标准应用。</div>
+</section>
+
+<section id="pins">
+  <h2>四、引脚对应（config.h）—— 软件和硬件的接口</h2>
+  <p class="lead">这是整个工程里<b>软件和实物硬件唯一的"对接点"</b>。代码里所有引脚号都集中定义在 <code>config.h</code>，改一处即可，不用满世界找。这张表也是实物接线的依据。</p>
+
+  <table>
+    <tr><th>模块</th><th>接口类型</th><th>信号</th><th>ESP32-S3 引脚</th><th>代码常量</th></tr>
+    <tr><td rowspan="6">ILI9341 彩色主屏</td><td rowspan="6">SPI</td><td>CS 片选</td><td class="pin">GPIO 10</td><td>LCD_CS_PIN</td></tr>
+    <tr><td>DC 数据/命令</td><td class="pin">GPIO 4</td><td>LCD_DC_PIN</td></tr>
+    <tr><td>RST 复位</td><td class="pin">GPIO 8</td><td>LCD_RST_PIN</td></tr>
+    <tr><td>MOSI 数据</td><td class="pin">GPIO 11</td><td>LCD_MOSI_PIN</td></tr>
+    <tr><td>SCK 时钟</td><td class="pin">GPIO 12</td><td>LCD_SCLK_PIN</td></tr>
+    <tr><td>MISO</td><td class="pin">GPIO 13</td><td>LCD_MISO_PIN</td></tr>
+    <tr><td rowspan="2">SSD1306 OLED 副屏</td><td rowspan="2">I²C</td><td>SDA 数据</td><td class="pin">GPIO 6</td><td>OLED_SDA_PIN</td></tr>
+    <tr><td>SCL 时钟</td><td class="pin">GPIO 7</td><td>OLED_SCL_PIN（地址0x3C）</td></tr>
+    <tr><td rowspan="2">4×4 矩阵键盘</td><td rowspan="2">GPIO</td><td>行 ROW1~4</td><td class="pin">GPIO 1/2/3/5</td><td>KB_ROW1~4</td></tr>
+    <tr><td>列 COL1~4</td><td class="pin">GPIO 14/15/16/17</td><td>KB_COL1~4</td></tr>
+    <tr><td>无源蜂鸣器</td><td>PWM</td><td>信号 IO</td><td class="pin">GPIO 18</td><td>AUDIO_PIN</td></tr>
+  </table>
+
+  <div class="human"><span class="t">这是人做的功夫</span>引脚不是随便排的。ESP32-S3 有些 GPIO 有特殊用途（接 Flash/PSRAM、上电时是 Strapping 引脚），占用会导致启动异常——我们仿真时就在 <b>0.808 秒卡死</b>过，正是引脚复用冲突。最终这张表是查规格书、避开敏感引脚定下来的（注意行用了 1/2/3/<b>5</b>，跳过 GPIO4 因为它给了彩屏 DC）。</div>
+
+  <h4>键值映射（keyboard.cpp 里的 keyMap）</h4>
+  <p>物理键盘印的是 1-9/A-D/*/#，但代码里要把它们翻译成"功能键值"。这张映射表把物理位置对应到功能：</p>
+  <pre><code>物理布局        →   功能键值
+ 1  2  3  A          KEY_1  KEY_2  KEY_3  KEY_UP(↑)
+ 4  5  6  B          KEY_4  KEY_5  KEY_6  KEY_DOWN(↓)
+ 7  8  9  C          KEY_7  KEY_8  KEY_FIRE  KEY_LEFT(←)
+ *  0  #  D          KEY_BACK  KEY_ENTER  KEY_ENTER  KEY_RIGHT(→)</code></pre>
+  <p style="color:var(--mut);font-size:14px">所以：A/B/C/D=方向，0或#=确认，*=返回，9=射击/硬降。这个映射表也是用键盘自检程序逐键验证过的。</p>
+</section>
+
+<section id="drivers">
+  <h2>五、底层驱动：把硬件变成函数</h2>
+
+  <div class="grid">
+    <div class="filecard">
+      <div class="fn">keyboard.cpp</div>
+      <div class="meta">4×4 矩阵键盘 · 行列扫描 · <span class="tag-h">人</span></div>
+      <b>原理（课程知识）</b>：16 个键用 8 根线。4 行设为输出、4 列输入上拉；<b>逐行拉低、读列</b>，哪一列被拉低就是哪个键按下；配合延时二次确认<b>消抖</b>。<br>
+      <b>关键函数</b>：<code>scanKeyboard()</code> 返回按下的键（带去重，按住只触发一次）；<code>isKeyPressed()</code> 检测是否按住（飞机连续移动用）。和 51 单片机用 P1/P2 口扫描键盘<b>原理完全一样</b>。
+    </div>
+    <div class="filecard">
+      <div class="fn">lcd_driver.cpp</div>
+      <div class="meta">ILI9341 彩屏 · SPI · <span class="tag-hy">人机</span></div>
+      <b>原理</b>：彩屏靠 SPI 高速传像素。逐像素发太慢，所以在内存里建一块 <b>240×320 的帧缓冲（GFXcanvas16，约150KB）</b>，先把画面全画到内存，再整帧一次性推给屏幕。<br>
+      <b>关键函数</b>：<code>lcdFillRect / lcdDrawString / lcdDrawLine</code>（画到内存）→ <code>lcdRefresh()</code>（推送到屏）。这块 150KB 帧缓冲也是<b>为什么必须用 ESP32 而非 51</b>的直接原因。
+    </div>
+    <div class="filecard">
+      <div class="fn">oled_driver.cpp</div>
+      <div class="meta">SSD1306 OLED · I²C · 746行 · <span class="tag-hy">人机</span></div>
+      <b>原理</b>：OLED 用 I²C 两根线驱动，自带中文字库（wqy GB2312），所以<b>中文显示靠它</b>。<br>
+      <b>内容</b>：表情显示（眨眼、各种颜文字脸）、边框文字、以及后加的<b>动态表情包播放</b>（见第九节）。这是最大的驱动文件，因为表情和动画素材都在这。
+    </div>
+    <div class="filecard">
+      <div class="fn">audio.cpp</div>
+      <div class="meta">无源蜂鸣器 · PWM · <span class="tag-h">人</span></div>
+      <b>原理（呼应C51音乐）</b>：无源蜂鸣器靠方波驱动，<b>方波频率 = 音调高低</b>。用 ESP32 的 LEDC 硬件 PWM 输出指定频率方波发声——这正是<b>我们之前用 C51 定时器播放音乐思路的延续</b>。<br>
+      <b>音符表</b>：<code>NOTE_C4=523, D4=587, E4=659...</code> 一组标准音高频率。<br>
+      <b>非阻塞改造</b>：把音效拆成"频率+时长"的序列，主循环每帧推进，<b>发声不卡住游戏画面</b>（原来用 delay 会顿）。
+    </div>
+  </div>
+</section>
+
+<section id="piano">
+  <h2>六、钢琴模块（piano_game.cpp，677行）—— 最用心的部分</h2>
+  <p class="lead">钢琴是整个项目的起点和核心，也是我们花心思最多的模块。<span class="tag-h">人主导</span></p>
+
+  <h3>它在做什么</h3>
+  <p>屏幕分 4 条竖直轨道，音符从上往下掉，落到底部判定线时按对应轨道键。按得准 → 判定 Perfect/Good，发出该音符的音调；按不准或漏掉 → Miss。不同轨道对应不同音阶，连起来就是一首曲子。还有长按音符、连击数(Combo)、命中率统计。</p>
+
+  <h3>核心思路（三个关键设计）</h3>
+  <div class="card">
+    <h4>① 音符"位置 ↔ 时间"的换算（判定的本质）</h4>
+    每个音符有一个出现时刻 <code>tick</code>。设计上让音符"<b>在它的 tick 时刻正好落到判定线</b>"，由此反推每一帧它应该在的 Y 坐标：<code>y = 判定线 + (当前时间 - tick) × 每毫秒下落像素</code>。这样"画面上音符到线"和"该得分的时刻"就<b>严格对齐</b>了。<br>
+    <span style="color:var(--green)">★ 这正是我们 debug 出来的关键修复</span>——最初版本判定时机和画面对不上，照判定线按反而 Miss，是在真机上发现并用这个公式修好的。
+  </div>
+  <div class="card">
+    <h4>② 音高的动态映射（可玩性的关键）</h4>
+    最初设计是"4 个键固定 4 个音"，但 4 个音根本弹不成曲子。我们重构为：<b>按对键就触发"当前乐曲此刻应当发出的音符"</b>——按键只负责判定"中没中"，发什么音由乐曲的音高数组决定。这样一首《小星星》《欢乐颂》就能完整弹出来。
+  </div>
+  <div class="card">
+    <h4>③ 音准校准（呼应 C51 音乐设计）</h4>
+    蜂鸣器用 PWM 方波发声、频率决定音高，这是<b>我们之前用 C51 播放音乐的延续</b>。但 ESP32 的实际听感音高需要校准——我们<b>专门另开了一个测试工程</b>，逐个试不同 PWM 频率的真实听感，校准了音符频率表，确保弹出来的调子是准的。
+  </div>
+
+  <h3>后期改进（真机体验驱动）</h3>
+  <ul>
+    <li><span class="tag-h">人</span> <b>音符到线自动发声</b>：让旋律全程都能听到（按键负责评分），而不是只有按中才响。</li>
+    <li><span class="tag-h">人</span> <b>难度选择</b>：进游戏先选简单/普通/困难，影响下落速度和判定宽松度。</li>
+    <li><span class="tag-h">人</span> <b>非阻塞重构</b>：把 <code>delay()</code> 全换成基于 <code>millis()</code> 的计时，消除下落卡顿。</li>
+  </ul>
+</section>
+
+<section id="games">
+  <h2>七、其它游戏模块</h2>
+  <p class="lead">这几个游戏是实物跑通后陆续加的，代码实现较多借助 AI，但<b>需求、参数、真机验证由我们把关</b>。<span class="tag-ai">AI实现</span> <span class="tag-h">人验证</span></p>
+
+  <div class="grid">
+    <div class="filecard">
+      <div class="fn">plane_game.cpp · 飞机大战</div>
+      <div class="meta"><span class="tag-h">人</span></div>
+      底部飞机移动+射击，敌机下落，碰撞检测，分数与等级。<br>
+      <span style="color:var(--green)">★ debug 点</span>：射击键最初按了没反应——定位到"按键处理被放在帧率限制之后丢弃了"，把射击提前处理才修好。
+    </div>
+    <div class="filecard">
+      <div class="fn">minesweeper.cpp · 扫雷（662行）</div>
+      <div class="meta"><span class="tag-ai">AI</span></div>
+      标准扫雷规则：数字提示、首点保护、空白区 BFS 自动展开、三种难度、成绩存 Flash。用方向键移光标代替鼠标点击。
+    </div>
+    <div class="filecard">
+      <div class="fn">snake_game.cpp · 贪吃蛇</div>
+      <div class="meta"><span class="tag-ai">AI</span></div>
+      蛇身用数组存坐标，定时前进，吃果变长加速，撞墙/撞自身结束。
+    </div>
+    <div class="filecard">
+      <div class="fn">tetris_game.cpp · 俄罗斯方块</div>
+      <div class="meta"><span class="tag-ai">AI</span></div>
+      7 种方块用相对坐标 + 旋转矩阵表示，碰撞判定、整行消除、消行升级加速、硬降。
+    </div>
+    <div class="filecard">
+      <div class="fn">game2048.cpp · 2048</div>
+      <div class="meta"><span class="tag-ai">AI</span></div>
+      4×4 格，四方向滑动合并相同数字。核心是"一行压缩+合并"算法，四个方向通过坐标变换复用同一套逻辑。
+    </div>
+  </div>
+  <div class="human"><span class="t">人验证的例子</span>这些游戏加进来后，我们在真机上发现"得分瞬间白屏跳回"——排查是<b>欠压重启</b>（发声+刷屏的电流尖峰），最后靠换强电源+软件减负解决；还把方向键从 ABCD 补充了 2/4/6/8，因为实测觉得更顺手。AI 写出功能，但这些真实问题只有真机能暴露、靠人解决。</div>
+</section>
+<section id="study">
+  <h2>八、学习模块 —— "学习机"定位的落地</h2>
+  <p class="lead">学习模块是这台机器区别于普通游戏机的关键。<span class="tag-h">人定需求</span> <span class="tag-ai">AI实现</span></p>
+
+  <div class="grid">
+    <div class="filecard">
+      <div class="fn">study_buddy.cpp · 番茄计时</div>
+      <div class="meta"><span class="tag-h">人</span></div>
+      选 25/30/45/60 分钟专注倒计时，进度条，5 分钟一次鼓励，完成播放成功音乐。专注期间副屏循环播放动态表情陪伴。
+    </div>
+    <div class="filecard">
+      <div class="fn">vocab.cpp · 背单词（313行）</div>
+      <div class="meta"><span class="tag-ai">AI</span> <span class="tag-h">人定需求</span></div>
+      翻卡片 + 选择题两种模式，内置 60 个常用词。<br>
+      <span style="color:var(--green)">★ 人的设计</span>：主屏（不支持中文）显英文、副屏（有中文字库）显中文释义——<b>双屏分工正是为了绕开主屏没中文字库的限制</b>，这个约束在钢琴阶段就发现了。
+    </div>
+    <div class="filecard">
+      <div class="fn">math_game.cpp · 数学速算（261行）</div>
+      <div class="meta"><span class="tag-ai">AI</span> <span class="tag-h">人定需求</span></div>
+      每轮 10 题，难度随题号递增（数值变大、出现三数连算）。<br>
+      <span style="color:var(--green)">★ 人的设计</span>：做成<b>选择题</b>而非输入题——因为键盘物理 0/9 键被占用（确认/射击），无法干净输入任意数字。这是结合硬件约束的取舍。
+    </div>
+    <div class="filecard">
+      <div class="fn">memory_game.cpp · 记忆翻牌</div>
+      <div class="meta"><span class="tag-ai">AI</span></div>
+      4×4=8 对字母，翻两张找配对，配对保留、不同盖回，统计步数，锻炼记忆力。
+    </div>
+  </div>
+
+  <h3>游戏限时机制（main.cpp 里实现）—— 整个项目的"灵魂设定"</h3>
+  <div class="human"><span class="t">这是人提出的核心需求</span>"学习机不能让人无限玩游戏"——所以我们在主循环里加了一段：累计游戏时间超 <b>10 分钟</b>就强制弹"该休息了"并踢回菜单；学习模块不计时。代码很短，但它<b>定义了整个产品的价值主张</b>：娱乐服务于学习。这不是 AI 想出来的，是我们对"学习机该是什么样"的判断。</div>
+</section>
+
+<section id="emoji">
+  <h2>九、动态表情包（亮点技术）</h2>
+  <p class="lead">让 128×64 的单色小屏显示会动的表情，是个有意思的技术点。<span class="tag-hy">人机协作</span></p>
+
+  <h3>单色屏怎么显示图片</h3>
+  <p>OLED 每个像素只有"亮/灭"，要显示图必须先转成<b>单色点阵</b>：每像素 1 bit，128×64 = 1024 字节，屏幕按这个 bit 数组逐点点亮。</p>
+
+  <h3>我们的自动化流程</h3>
+  <p>原始的手工做法是用 PCtoLCD 软件一张张转，18 张太慢。我们写了个 <b>Python 脚本 <code>tools_emoji_convert.py</code></b>（基于 Pillow）批量处理：</p>
+  <pre><code>原图(2048×2048彩色) → 降采样 → 缩放裁剪到128×64
+  → 二值化(暗处点亮) → 打包成 XBM 字节数组
+  → 生成 emoji_bitmaps.h(18个位图 + 5组动画表)</code></pre>
+  <p>验证时还把图打印成 ASCII 字符画在终端预览，确认转换效果。</p>
+
+  <h3>"动态"怎么实现</h3>
+  <p>把同一个动作拆成 2~3 张分镜，按固定间隔循环切换 = 帧动画。18 张编成 5 组，在<b>菜单待机</b>和<b>番茄专注</b>时循环播放（每帧约 600ms、每组约 4.5 秒切换）。为省电只在帧变化时刷新——这条<b>正是从欠压调试中学到的经验</b>（降低刷新频率减小平均电流）。</p>
+  <div class="tip"><span class="t">技术串联</span>这一个功能串起了：I²C 显示接口 + PROGMEM（把大位图放 Flash 而非 RAM）+ 供电优化经验。</div>
+</section>
+
+<section id="shell">
+  <h2>十、隐藏彩蛋：Ghost Shell（ghost_shell.cpp + safe_ram.cpp）</h2>
+  <p class="lead">一个伪装成"黑客终端"的隐藏调试工具，是开发中做的趣味小东西。<span class="tag-ai">AI</span></p>
+  <ul>
+    <li><b>触发</b>：主菜单输入 Konami 码 <code>↑↑↓↓←→←→ 9 0</code>（菜单无任何提示），按对后蜂鸣器三声进入。</li>
+    <li><b>功能</b>：黑底绿字的十六进制内存编辑器 + 参数速改菜单，可实时调扫雷棋盘/雷数/透视开关等。</li>
+    <li><b>安全设计</b>：它操作的不是真实内存，而是一块专门的 <b>64 字节沙盒 <code>safeRAM</code></b>，写操作带边界检查，越界/非法值一律拒绝，<b>碰不到真实内存、不会崩溃</b>。</li>
+  </ul>
+  <p style="color:var(--mut);font-size:14px">技术上串联了"按键序列状态机"（识别 Konami 码）和"安全边界设计"（沙盒内存），是彩蛋也是一次小练习。</p>
+</section>
+
+<section id="debug">
+  <h2>十一、调试历程 —— 这才是真功夫</h2>
+  <p class="lead">代码能不能写出来不是最难的，<b>让它在真实硬件上跑起来</b>才是。这些问题没有一个能靠 AI 凭空解决，全是真机上一步步排出来的。<span class="tag-h">全程人主导</span></p>
+
+  <table>
+    <tr><th>遇到的现象</th><th>排查方法</th><th>根本原因</th><th>解决</th></tr>
+    <tr><td>Arduino 编译报 status 1/2</td><td>查报错</td><td>用户名含中文，编译缓存路径乱码</td><td>改全英文缓存路径</td></tr>
+    <tr><td>仿真精确在 0.808 秒卡死</td><td>断点+引脚电平</td><td>引脚复用冲突</td><td>查规格书避开敏感引脚</td></tr>
+    <tr><td>PlatformIO 编译过但链接失败</td><td>看报错路径</td><td>中文路径致链接器写不了 .map</td><td>脚本移除 -Map 选项</td></tr>
+    <tr><td>彩屏完全不亮</td><td>逐线复查、对照丝印</td><td>SPI 引脚错位（按位置数而非丝印）</td><td>按丝印重接</td></tr>
+    <tr><td>副屏不亮</td><td>查电源回路</td><td>两块面包板电源轨没联通</td><td>跨板联通 +/− 轨</td></tr>
+    <tr><td>得分时白屏闪+蜂鸣器乱响+跳回</td><td>串口看复位原因</td><td>BROWNOUT 欠压（发声+刷屏电流尖峰）</td><td>换强电源+软件减负</td></tr>
+    <tr><td>钢琴照判定线按却 Miss</td><td>分析判定逻辑</td><td>判定时机与画面位置没对齐</td><td>重推位置-时间公式</td></tr>
+    <tr><td>飞机按键射击没反应</td><td>看主循环时序</td><td>按键被帧率限制丢弃</td><td>射击提前处理</td></tr>
+  </table>
+
+  <div class="human"><span class="t">汇报时可以强调</span>这张表里每一行，都是"<b>现象 → 用接口/电路原理分析 → 定位 → 修复</b>"的完整工程闭环。AI 能写功能代码，但<b>识别真实世界的问题、用原理推断根因、在硬件上验证修复</b>——这是人的核心价值，也是这门课真正要训练的能力。</div>
+</section>
+
+</div>
+
+<footer>
+  ESP32-S3 学习游戏一体机 · 代码工程讲解 · 约 5700 行 C/C++<br>
+  工具用得坦荡，工程判断在人。
+</footer>
+
+
+
+
+
+</body>
+</html>

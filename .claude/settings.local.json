@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+
+      "Bash(pip *)",
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(pip3 *)",
+      
+
+      "Bash(cd *)",
+      "Bash(ls *)",
+      "Bash(dir *)",
+      "Bash(mkdir *)",
+      "Bash(rm *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      
+
+      "Bash(git *)",
+      
+
+      "Bash(esptool.py *)",
+      "Bash(ampy *)",
+      "Bash(idf.py *)",
+      "Bash(platformio *)",
+      "Bash(arduino-cli *)",
+
+      "Bash(make *)",
+      "Bash(cmake *)"
+    ]
+  }
+}

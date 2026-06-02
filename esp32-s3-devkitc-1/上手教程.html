@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32-S3 学习游戏一体机 · 小白上手教程</title>
+<style>
+  :root{
+    --bg:#0f1220; --card:#1a1f35; --card2:#232a47; --line:#2e375c;
+    --txt:#e7ebf5; --mut:#9aa3c4; --accent:#5ad1ff; --green:#54e09b;
+    --gold:#ffcc5c; --red:#ff7a8a; --vcc:#ff6b6b; --gnd:#3a3f55; --sig:#54e09b;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--txt);line-height:1.7;font-size:16px}
+  header{padding:48px 20px 36px;text-align:center;
+    background:radial-gradient(1200px 400px at 50% -120px,#23306b,transparent),var(--bg);
+    border-bottom:1px solid var(--line)}
+  header h1{margin:0 0 8px;font-size:30px;letter-spacing:.5px}
+  header p{margin:4px 0;color:var(--mut)}
+  .wrap{max-width:920px;margin:0 auto;padding:0 18px 80px}
+  nav{position:sticky;top:0;z-index:20;background:rgba(15,18,32,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 0}
+  nav .inner{max-width:920px;margin:0 auto;padding:0 18px;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center}
+  nav a{color:var(--mut);text-decoration:none;font-size:13px;padding:5px 11px;
+    border-radius:20px;border:1px solid transparent;white-space:nowrap}
+  nav a:hover{color:var(--txt);border-color:var(--line);background:var(--card)}
+  section{margin-top:40px;scroll-margin-top:60px}
+  h2{font-size:23px;border-left:4px solid var(--accent);padding-left:12px;margin:0 0 6px}
+  h3{font-size:18px;color:var(--accent);margin:26px 0 8px}
+  .lead{color:var(--mut);margin:0 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;margin:14px 0}
+  .step{display:flex;gap:14px;margin:16px 0;align-items:flex-start}
+  .num{flex:0 0 34px;height:34px;border-radius:50%;background:var(--accent);
+    color:#06283b;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .step .body{flex:1}
+  .step .body h4{margin:3px 0 4px;font-size:17px}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14.5px;
+    overflow:hidden;border-radius:10px}
+  th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:var(--card2);color:var(--accent);font-weight:600}
+  tr:last-child td{border-bottom:none}
+  td.pin{font-family:ui-monospace,Consolas,monospace;font-weight:700}
+  .badge{display:inline-block;padding:2px 9px;border-radius:6px;font-size:12.5px;
+    font-weight:700;font-family:ui-monospace,monospace}
+  .b-vcc{background:#3a1417;color:#ff9aa6}
+  .b-gnd{background:#23283c;color:#aab2d0}
+  .b-sig{background:#10311f;color:#7ef0b5}
+  .b-io{background:#2a2350;color:#c3b6ff}
+  .tip,.warn,.ok{border-radius:12px;padding:13px 16px;margin:14px 0;border:1px solid}
+  .tip{background:#13233a;border-color:#2c4a72}
+  .warn{background:#3a1f12;border-color:#7a4a2c}
+  .ok{background:#10311f;border-color:#2c6b46}
+  .tag{font-weight:700;margin-right:6px}
+  .tip .tag{color:var(--accent)} .warn .tag{color:var(--gold)} .ok .tag{color:var(--green)}
+  code{background:#000;color:#7ef0b5;padding:2px 7px;border-radius:5px;
+    font-family:ui-monospace,Consolas,monospace;font-size:13.5px}
+  pre{background:#05070f;border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;overflow-x:auto}
+  pre code{background:none;padding:0;color:#cfe6ff}
+  ul,ol{padding-left:22px}
+  li{margin:5px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .mini{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .mini b{color:var(--accent)}
+  .chk{list-style:none;padding-left:0}
+  .chk li{padding-left:28px;position:relative}
+  .chk li::before{content:"☐";position:absolute;left:0;color:var(--accent);font-size:18px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:4px 18px;margin:10px 0}
+  summary{cursor:pointer;padding:12px 0;font-weight:600;color:var(--gold)}
+  .kbd{display:inline-block;background:#222842;border:1px solid #3a4368;
+    border-bottom-width:3px;border-radius:6px;padding:1px 8px;font-family:ui-monospace,monospace;font-size:13px}
+  footer{text-align:center;color:var(--mut);padding:30px;font-size:13px;border-top:1px solid var(--line)}
+  .keypadgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:340px;margin:10px 0}
+  .keypadgrid div{background:var(--card2);border:1px solid var(--line);border-radius:8px;
+    text-align:center;padding:12px 0;font-weight:700;font-size:18px}
+  .keypadgrid small{display:block;color:var(--mut);font-weight:400;font-size:11px}
+  hr{border:none;border-top:1px dashed var(--line);margin:22px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎮 ESP32-S3 学习游戏一体机</h1>
+  <p>从一堆零件到能玩的掌机 · 纯小白一步步操作教程</p>
+  <p style="font-size:13px">钢琴 · 飞机大战 · 扫雷 · 贪吃蛇 · 俄罗斯方块 · 2048 · 番茄计时 &nbsp;|&nbsp; 双屏 + 4×4 键盘 + 蜂鸣器</p>
+</header>
+
+<nav><div class="inner">
+  <a href="#what">这是什么</a>
+  <a href="#parts">零件清单</a>
+  <a href="#software">装软件</a>
+  <a href="#wiring">接线（最重要）</a>
+  <a href="#upload">烧录程序</a>
+  <a href="#play">开始玩</a>
+  <a href="#trouble">出问题了</a>
+</div></nav>
+
+<div class="wrap">
+
+<section id="what">
+  <h2>① 这是什么，我要做什么</h2>
+  <p class="lead">你买的这堆零件，最终会拼成一台小型掌上游戏机。整个过程就三件事：</p>
+  <div class="grid">
+    <div class="mini"><b>1. 接线</b><br>把屏幕、键盘、蜂鸣器，用面包板和杜邦线连到 ESP32 主板的正确引脚上。</div>
+    <div class="mini"><b>2. 烧录</b><br>用数据线把电脑里写好的程序传进 ESP32 芯片里（叫"烧录"或"上传"）。</div>
+    <div class="mini"><b>3. 开玩</b><br>通电，屏幕亮起菜单，用键盘选游戏。</div>
+  </div>
+  <div class="tip"><span class="tag">说明</span>程序代码已经全部写好了，你<b>不需要</b>会编程。你要做的是：装好工具 → 照着接线表把线插对 → 点一个"上传"按钮。本教程假设你完全没碰过这些。</div>
+  <div class="ok"><span class="tag">好消息</span>这个项目在电脑模拟器（Wokwi）里已经验证过，接线关系是确定的。你只要照抄下面的接线表就行。</div>
+</section>
+<section id="parts">
+  <h2>② 清点你的零件</h2>
+  <p class="lead">对照下表，确认每样东西都到齐了。括号里是它在淘宝订单里的名字。</p>
+  <table>
+    <tr><th>零件</th><th>作用</th><th>数量</th></tr>
+    <tr><td><b>ESP32-S3-DevKitC-1</b><br><small style="color:var(--mut)">N16R8 开发板</small></td><td>大脑主板，所有线都插它</td><td>1（你有2块，用1块）</td></tr>
+    <tr><td><b>ILI9341 彩色屏</b><br><small style="color:var(--mut)">TFT 1.8/2.4寸 SPI 14PIN</small></td><td>主屏，显示游戏画面</td><td>1</td></tr>
+    <tr><td><b>SSD1306 OLED 屏</b><br><small style="color:var(--mut)">0.96寸 4脚 蓝/黄</small></td><td>副屏，显示表情和数据</td><td>1</td></tr>
+    <tr><td><b>4×4 矩阵薄膜键盘</b></td><td>操作按键</td><td>1（薄膜或带按钮的都行）</td></tr>
+    <tr><td><b>无源蜂鸣器模块</b><br><small style="color:var(--mut)">3脚，低电平触发</small></td><td>游戏音效</td><td>1</td></tr>
+    <tr><td><b>面包板 + 杜邦线</b><br><small style="color:var(--mut)">400/830孔套件</small></td><td>免焊接线用</td><td>1套</td></tr>
+    <tr><td><b>USB 数据线</b><br><small style="color:var(--mut)">双头公对公 / Type-C</small></td><td>连电脑，供电+烧录</td><td>1</td></tr>
+  </table>
+  <div class="warn"><span class="tag">注意一</span>蜂鸣器要选 <b>无源</b> 蜂鸣器模块（3个脚：VCC/GND/IO）。有源的只会"嘀"一声，无源的才能弹出不同音调的曲子。本程序按无源写的。</div>
+  <div class="warn"><span class="tag">注意二</span>USB 线必须是 <b>能传数据</b> 的，不能是只能充电的线。插上电脑如果完全没反应，先怀疑这根线。</div>
+
+  <h3>认识 ESP32 主板</h3>
+  <p>主板两侧各有一排金属引脚，每个引脚旁边印着小字编号，比如 <code>1</code> <code>4</code> <code>GND</code> <code>3V3</code>。接线全靠认这些编号。</p>
+  <ul>
+    <li><span class="badge b-vcc">3V3</span> = 3.3V 正电源（给模块供电的"火线"）</li>
+    <li><span class="badge b-gnd">GND</span> = 地线（电源的"零线"，板上有好几个，任选）</li>
+    <li><span class="badge b-sig">数字</span> = GPIO 信号脚，比如 <code>4</code> 就是 GPIO4，编号必须对上</li>
+    <li>板子一端有 <b>两个</b> USB-C 口。靠近边角、标着 <b>UART / COM</b> 的那个用来烧录最稳妥（两个口一般都能用，不行就换另一个）。</li>
+  </ul>
+</section>
+<section id="software">
+  <h2>③ 安装软件（一次性，约 20 分钟）</h2>
+  <p class="lead">程序是用 PlatformIO 写的。它是 VS Code 编辑器里的一个插件。装好后，烧录就是点一个按钮的事。</p>
+
+  <div class="step"><div class="num">1</div><div class="body">
+    <h4>装 VS Code</h4>
+    打开浏览器搜索 <b>VS Code</b>，进官网 <code>code.visualstudio.com</code>，下载 Windows 版，一路"下一步"装完。这是个免费的代码编辑器。
+  </div></div>
+
+  <div class="step"><div class="num">2</div><div class="body">
+    <h4>装 PlatformIO 插件</h4>
+    打开 VS Code → 点左边竖排图标里那个<b>四个方块</b>（扩展 Extensions）→ 搜索框输入 <code>PlatformIO IDE</code> → 点第一个结果的 <b>Install</b>。
+    <div class="tip"><span class="tag">耐心等</span>装完它会在后台下载一堆编译工具，<b>第一次可能要 5–15 分钟</b>，右下角有进度。装好后会提示重启 VS Code，点重启。</div>
+  </div></div>
+
+  <div class="step"><div class="num">3</div><div class="body">
+    <h4>装 USB 驱动（让电脑认识主板）</h4>
+    ESP32-S3 用 USB 直连一般免驱。先跳过这步，等接好线插上电脑后，如果在设备里看不到串口，再回来装。常见驱动是 <b>CH343 / CP210x</b>，搜索对应名字下载安装即可。
+  </div></div>
+
+  <div class="step"><div class="num">4</div><div class="body">
+    <h4>用 VS Code 打开本项目</h4>
+    VS Code 顶部菜单 <b>File → Open Folder</b>，选中这个文件夹：
+    <pre><code>260523-190907-esp32-s3-devkitc-1</code></pre>
+    打开后，左下角蓝色状态栏会出现一排小图标（✓ 对勾、→ 箭头、🔌 插头、🗑 垃圾桶）。这就是 PlatformIO 的按钮，烧录全靠它们。
+    <div class="tip"><span class="tag">说明</span>项目里的 <code>platformio.ini</code> 已经配好了用哪块板子、需要哪些库。第一次编译时 PlatformIO 会自动联网下载 U8g2、Adafruit GFX、Adafruit ILI9341 三个库，<b>保持网络畅通</b>即可，无需手动装。</div>
+  </div></div>
+</section>
+<section id="wiring">
+  <h2>④ 接线（最关键的一步，慢慢来）</h2>
+  <p class="lead">下面每张表的右列 = ESP32 主板上的引脚编号，左列 = 模块上的引脚名。<b>一根线连两端，对着编号插就行。</b>建议每接完一个模块，回头核对一遍再接下一个。</p>
+
+  <div class="warn"><span class="tag">先断电</span>接线时 USB <b>先不要</b>插电脑。全部接完、核对无误后再通电。带电插拔容易烧模块。</div>
+
+  <div class="card">
+    <h3 style="margin-top:6px">总电源怎么走</h3>
+    <p>所有模块都要"吃电"（VCC）和"接地"（GND）。最省事的做法是用面包板的电源轨：</p>
+    <ol>
+      <li>从 ESP32 的 <span class="badge b-vcc">3V3</span> 引一根线到面包板 <b>红色"+"轨</b>。</li>
+      <li>从 ESP32 的 <span class="badge b-gnd">GND</span> 引一根线到面包板 <b>蓝色"−"轨</b>。</li>
+      <li>之后每个模块的 VCC 都插红轨，GND 都插蓝轨。这样就不用从主板引很多根电源线。</li>
+    </ol>
+    <div class="warn"><span class="tag">重要</span>模块电源一律接 <b>3V3，不要接 5V</b>。ESP32-S3 的 GPIO 是 3.3V 的，屏幕也按 3.3V 用，接 5V 可能损坏。</div>
+  </div>
+
+  <h3>🟦 模块 1：ILI9341 彩色主屏（SPI，14脚模块）</h3>
+  <p class="lead">这块屏脚最多。它有 14 个脚，但<b>带 SD 卡的 4 个脚（SD_CS/SD_MOSI/SD_SCK/SD_MISO）不用接</b>，只接下面 9 个。</p>
+  <table>
+    <tr><th>屏幕引脚（丝印名）</th><th>接到 ESP32</th><th>类型</th></tr>
+    <tr><td>VCC</td><td class="pin">3V3（红轨）</td><td><span class="badge b-vcc">电源</span></td></tr>
+    <tr><td>GND</td><td class="pin">GND（蓝轨）</td><td><span class="badge b-gnd">地</span></td></tr>
+    <tr><td>CS</td><td class="pin">GPIO 10</td><td><span class="badge b-sig">信号</span></td></tr>
+    <tr><td>RST / RESET</td><td class="pin">GPIO 8</td><td><span class="badge b-sig">信号</span></td></tr>
+    <tr><td>DC / RS</td><td class="pin">GPIO 4</td><td><span class="badge b-sig">信号</span></td></tr>
+    <tr><td>SDI / MOSI</td><td class="pin">GPIO 11</td><td><span class="badge b-sig">信号</span></td></tr>
+    <tr><td>SCK / CLK</td><td class="pin">GPIO 12</td><td><span class="badge b-sig">信号</span></td></tr>
+    <tr><td>SDO / MISO</td><td class="pin">GPIO 13</td><td><span class="badge b-sig">信号</span></td></tr>
+    <tr><td>LED / BL（背光）</td><td class="pin">3V3（红轨）</td><td><span class="badge b-vcc">电源</span></td></tr>
+  </table>
+  <div class="tip"><span class="tag">名字对不上？</span>不同卖家丝印略有差别：<code>SDI=MOSI=DIN</code>，<code>SDO=MISO</code>，<code>DC=RS=A0</code>，<code>SCK=CLK=SCL</code>。按功能对应即可。SD 开头的 4 个脚<b>留空不接</b>。</div>
+
+  <h3>🟨 模块 2：SSD1306 OLED 副屏（I2C，4脚）</h3>
+  <table>
+    <tr><th>屏幕引脚</th><th>接到 ESP32</th><th>类型</th></tr>
+    <tr><td>VCC</td><td class="pin">3V3（红轨）</td><td><span class="badge b-vcc">电源</span></td></tr>
+    <tr><td>GND</td><td class="pin">GND（蓝轨）</td><td><span class="badge b-gnd">地</span></td></tr>
+    <tr><td>SDA</td><td class="pin">GPIO 6</td><td><span class="badge b-sig">信号</span></td></tr>
+    <tr><td>SCL</td><td class="pin">GPIO 7</td><td><span class="badge b-sig">信号</span></td></tr>
+  </table>
+  <div class="tip"><span class="tag">地址</span>程序按 I2C 地址 <code>0x3C</code> 写的，市面 0.96 寸 OLED 基本都是这个地址，直接用。</div>
+  <h3>🟩 模块 3：4×4 矩阵键盘（8 根线，无正负之分）</h3>
+  <p class="lead">键盘有 8 个脚，分成"行(Row) 4 个"和"列(Column) 4 个"。它<b>不需要接电源</b>，8 个脚全是信号线。把排线/接口面对自己，从左到右一般就是 行1 行2 行3 行4 列1 列2 列3 列4。</p>
+  <table>
+    <tr><th>键盘引脚</th><th>接到 ESP32</th></tr>
+    <tr><td>行1 / R1（最左）</td><td class="pin">GPIO 1</td></tr>
+    <tr><td>行2 / R2</td><td class="pin">GPIO 2</td></tr>
+    <tr><td>行3 / R3</td><td class="pin">GPIO 3</td></tr>
+    <tr><td>行4 / R4</td><td class="pin">GPIO 5</td></tr>
+    <tr><td>列1 / C1</td><td class="pin">GPIO 14</td></tr>
+    <tr><td>列2 / C2</td><td class="pin">GPIO 15</td></tr>
+    <tr><td>列3 / C3</td><td class="pin">GPIO 16</td></tr>
+    <tr><td>列4 / C4（最右）</td><td class="pin">GPIO 17</td></tr>
+  </table>
+  <div class="tip"><span class="tag">接反了也不怕</span>如果接好后发现"按 1 出来的是 3"之类按键错位，多半是行/列插的顺序反了。先把 4 根行线整体和 4 根列线整体对调试试，或在下一节用串口看实际键值再微调。不会烧坏东西。</div>
+
+  <h3>🔊 模块 4：无源蜂鸣器（3 脚模块）</h3>
+  <table>
+    <tr><th>蜂鸣器引脚</th><th>接到 ESP32</th><th>类型</th></tr>
+    <tr><td>VCC / +</td><td class="pin">3V3（红轨）</td><td><span class="badge b-vcc">电源</span></td></tr>
+    <tr><td>GND / −</td><td class="pin">GND（蓝轨）</td><td><span class="badge b-gnd">地</span></td></tr>
+    <tr><td>I/O / S（信号）</td><td class="pin">GPIO 18</td><td><span class="badge b-sig">信号</span></td></tr>
+  </table>
+  <div class="tip"><span class="tag">关于声音</span>这是低电平触发的无源蜂鸣器，程序里用 PWM 输出方波让它发出不同音调。如果完全不响，先确认是<b>无源</b>蜂鸣器、信号脚接的是 GPIO18，且 VCC 接的 3V3。</div>
+
+  <hr>
+  <h3>📋 一张总表（接好后逐行打勾核对）</h3>
+  <table>
+    <tr><th>ESP32 引脚</th><th>接到哪个模块的哪个脚</th></tr>
+    <tr><td class="pin">3V3</td><td>面包板红轨 → 各模块 VCC + 屏幕 LED 背光</td></tr>
+    <tr><td class="pin">GND</td><td>面包板蓝轨 → 各模块 GND</td></tr>
+    <tr><td class="pin">GPIO 4</td><td>彩屏 DC/RS</td></tr>
+    <tr><td class="pin">GPIO 8</td><td>彩屏 RST</td></tr>
+    <tr><td class="pin">GPIO 10</td><td>彩屏 CS</td></tr>
+    <tr><td class="pin">GPIO 11</td><td>彩屏 MOSI/SDI</td></tr>
+    <tr><td class="pin">GPIO 12</td><td>彩屏 SCK/CLK</td></tr>
+    <tr><td class="pin">GPIO 13</td><td>彩屏 MISO/SDO</td></tr>
+    <tr><td class="pin">GPIO 6</td><td>OLED SDA</td></tr>
+    <tr><td class="pin">GPIO 7</td><td>OLED SCL</td></tr>
+    <tr><td class="pin">GPIO 1 / 2 / 3 / 5</td><td>键盘 行1 / 行2 / 行3 / 行4</td></tr>
+    <tr><td class="pin">GPIO 14 / 15 / 16 / 17</td><td>键盘 列1 / 列2 / 列3 / 列4</td></tr>
+    <tr><td class="pin">GPIO 18</td><td>蜂鸣器 信号(I/O)</td></tr>
+  </table>
+  <div class="warn"><span class="tag">最后检查</span>重点确认两件事：① 没有任何模块的电源接到了 5V；② 红轨和蓝轨之间没有被金属线/元件直接短接。确认无误，才插 USB 通电。</div>
+</section>
+<section id="upload">
+  <h2>⑤ 烧录程序到主板</h2>
+  <p class="lead">接线核对完毕后，把 USB 线一头插主板（标 UART/COM 的口优先），一头插电脑。主板上的电源灯应该亮起。</p>
+
+  <div class="step"><div class="num">1</div><div class="body">
+    <h4>编译（Build）</h4>
+    在 VS Code 左下角蓝条上，点那个 <b>✓ 对勾</b> 图标（PlatformIO: Build）。
+    <div class="tip"><span class="tag">第一次很慢</span>它会先下载三个库再编译，可能要几分钟。底部终端最后显示绿色 <code>SUCCESS</code> 就成功了。如果是红色 <code>FAILED</code>，把报错文字复制下来去查（多半是网络没下全库，重点几次即可）。</div>
+  </div></div>
+
+  <div class="step"><div class="num">2</div><div class="body">
+    <h4>上传（Upload）= 真正的烧录</h4>
+    点蓝条上的 <b>→ 右箭头</b> 图标（PlatformIO: Upload）。它会自动编译并把程序写进芯片。终端出现 <code>Writing...</code> 进度条、最后 <code>SUCCESS</code> 即完成。
+  </div></div>
+
+  <div class="step"><div class="num">3</div><div class="body">
+    <h4>烧不进去？手动进下载模式</h4>
+    少数情况上传卡在 <code>Connecting....</code>。这时：<b>按住主板上的 BOOT 键不放 → 按一下 RST/EN 键 → 松开 BOOT</b>，让芯片进入下载模式，再点一次 → 上传。
+  </div></div>
+
+  <div class="ok"><span class="tag">成功标志</span>上传成功后主板会自动重启，<b>彩色主屏立刻亮起菜单</b>，蜂鸣器"嘀"一声，OLED 开始眨眼。看到这些，硬件就全部打通了！</div>
+
+  <h3>看运行日志（可选，排错神器）</h3>
+  <p>点蓝条上的 <b>🔌 插头</b> 图标（Serial Monitor，波特率 115200）。能看到程序打印的信息，比如开机会打印 <code>=== ESP32-S3 Learning Game Machine ===</code>。屏幕不亮但这行能出来，说明主板没问题、问题在屏幕接线。</p>
+</section>
+<section id="play">
+  <h2>⑥ 开始玩</h2>
+  <p class="lead">开机进入彩色菜单，共 <b>10 个功能</b>（6 游戏 + 4 学习）：钢琴 / 飞机大战 / 扫雷 / 贪吃蛇 / 俄罗斯方块 / 2048 / 番茄计时 / 背单词 / 数学速算 / 记忆翻牌。菜单可上下滚动，用键盘 <span class="kbd">A</span> 上、<span class="kbd">B</span> 下 选择，<span class="kbd">0</span> 或 <span class="kbd">#</span> 确认进入，任何时候按 <span class="kbd">*</span> 回主菜单。</p>
+
+  <h3>键盘按键功能图（通用方向）</h3>
+  <div class="keypadgrid">
+    <div>1<small>轨道1</small></div><div>2<small>轨道2</small></div><div>3<small>轨道3</small></div><div>A<small>↑ 上</small></div>
+    <div>4<small>轨道4</small></div><div>5<small>功能</small></div><div>6<small>功能</small></div><div>B<small>↓ 下</small></div>
+    <div>7<small> </small></div><div>8<small> </small></div><div>9<small>射击/硬降</small></div><div>C<small>← 左</small></div>
+    <div>*<small>返回</small></div><div>0<small>确认</small></div><div>#<small>确认</small></div><div>D<small>→ 右</small></div>
+  </div>
+  <div class="tip"><span class="tag">通用规则</span>几乎所有游戏：<b>A/B/C/D = 上/下/左/右</b>，<b>0 或 # = 确认</b>，<b>* = 返回主菜单</b>。每个游戏的特殊键见下面各自说明。</div>
+
+  <div class="grid">
+    <div class="mini"><b>🎹 钢琴游戏</b><br>音符从上往下掉，<b>到底部白色判定线时</b>按对应轨道键（1/2/3/4 或 A/B/C/D）才得分并发声。<br><small style="color:var(--mut)">进入后等 3 秒自动开始。5/6 切歌（共6首），0/# 暂停。判定已放宽、音符已调慢，比之前更好上手。按住 1+2 或 3+4 触发隐藏角色动画。</small></div>
+    <div class="mini"><b>✈️ 飞机大战</b><br>A/B/C/D 四方向移动，<b>9 键或 0/# 射击</b>（射击已修好，按了必发弹）。撞机或漏敌机扣命，3 条命用完结束。<br><small style="color:var(--mut)">每约 10 秒升一级，敌机变快变强。结束后 0/# 重开。</small></div>
+    <div class="mini"><b>💣 扫雷</b><br>方向键 A/B/C/D 移动光标，<b>0/# 揭开</b>格子，<b>9 键(C)插旗/取消旗</b>。数字=周围雷数，揭开空白会自动展开一片。<br><small style="color:var(--mut)">1/2/3 切换难度（简单8×8/中等12×12/困难16×16），5 重开。踩雷即失败，揭开所有非雷格获胜。和电脑版规则一样，只是用方向键移动光标代替鼠标点击。</small></div>
+    <div class="mini"><b>🐍 贪吃蛇</b><br>方向键 A/B/C/D 控制蛇头转向（不能直接掉头），吃红色果子变长 +10 分并加速。<br><small style="color:var(--mut)">撞墙或撞到自己身体即结束。0/# 暂停，结束后 0/# 重开。</small></div>
+    <div class="mini"><b>🧱 俄罗斯方块</b><br>C/D 左右移动，<b>A 旋转</b>，<b>B 软降</b>（加速下落），<b>9 键硬降</b>（直接落到底）。<br><small style="color:var(--mut)">消除整行得分，10 行升一级、下落变快。5 暂停。顶到顶部即结束，0/# 重开。</small></div>
+    <div class="mini"><b>🔢 2048</b><br>方向键 A/B/C/D 把所有数字向该方向滑动，相同数字相撞合并翻倍。<br><small style="color:var(--mut)">拼出 2048 获胜（可按 0/# 继续玩）。棋盘填满且无法合并即结束，0/# 重开。</small></div>
+    <div class="mini"><b>🍅 番茄计时</b><br>A/B 选 25/30/45/60 分钟，0/# 开始专注倒计时。0/# 可暂停，时间到播放成功音乐。<br><small style="color:var(--mut)">专注期间副屏循环播放动态表情包陪伴。</small></div>
+    <div class="mini"><b>📖 背单词</b><br>进入先选：<b>1=翻卡片</b>，<b>2=选择题</b>。翻卡片：主屏显英文→0/#看释义（中文在副屏）→1记得/2不记得。选择题：主屏英文+副屏4个中文选项，按 1/2/3/4 选。<br><small style="color:var(--mut)">内置60个常用词，主屏英文/副屏中文分工显示。</small></div>
+    <div class="mini"><b>➗ 数学速算</b><br>进入先选：<b>1=加减 / 2=乘除 / 3=混合</b>。每轮10题，主屏显算式+4个数字选项，按 1/2/3/4 选答，结算给评级。<br><small style="color:var(--mut)">题目越往后越难，会出现三数连算。</small></div>
+    <div class="mini"><b>🃏 记忆翻牌</b><br>4×4=16张牌=8对字母。方向键移光标，0/# 翻牌，翻开两张相同则消除、不同则盖回。全配对获胜，统计步数。<br><small style="color:var(--mut)">锻炼记忆力。方向键 A/B/C/D 或 2/8/4/6 都行。</small></div>
+    <div class="mini" style="border-color:#2c6b46"><b>⏰ 游戏限时（防沉迷）</b><br>连续玩游戏超过 <b>10 分钟</b>会自动弹"该休息了"并踢回主菜单。<br><small style="color:var(--mut)">学习模块（番茄/背单词/数学/记忆）不计入限时。这是"学习机"定位的核心机制。</small></div>
+    <div class="mini" style="border-color:#7a4a2c"><b>👻 隐藏彩蛋：Ghost Shell</b><br>在<b>主菜单</b>依次按：<span class="kbd">A</span> <span class="kbd">A</span> <span class="kbd">B</span> <span class="kbd">B</span> <span class="kbd">C</span> <span class="kbd">D</span> <span class="kbd">C</span> <span class="kbd">D</span> <span class="kbd">9</span> <span class="kbd">0</span>（上上下下左右左右+9+0）。<br><small style="color:var(--mut)">按对后蜂鸣器"嘀嘀嘀"三声，进入一个黑底绿字的十六进制内存编辑器（可调扫雷参数等）。按 * 退出。纯属彩蛋，不影响正常游戏。</small></div>
+  </div>
+</section>
+
+<section id="trouble">
+  <h2>⑦ 出问题了怎么办</h2>
+  <details><summary>插上电脑，VS Code 找不到串口 / 上传报 "could not open port"</summary>
+    <ul>
+      <li>换一根<b>能传数据</b>的 USB 线（最常见原因）。</li>
+      <li>换主板上另一个 USB-C 口试试。</li>
+      <li>装 USB 驱动：搜索 <b>CH343 驱动</b> 或 <b>CP210x 驱动</b> 下载安装，重插。</li>
+    </ul>
+  </details>
+  <details><summary>上传一直卡在 Connecting……</summary>
+    按住 <b>BOOT</b> → 点一下 <b>RST/EN</b> → 松开 BOOT，再点上传。
+  </details>
+  <details><summary>彩色屏不亮 / 白屏 / 花屏</summary>
+    <ul>
+      <li>白屏多半是某根 SPI 线没插好：重点查 CS(10)、DC(4)、RST(8)、MOSI(11)、SCK(12) 五根。</li>
+      <li>完全不亮：先确认 VCC 接 3V3、LED 背光脚也接了 3V3、GND 接好。</li>
+      <li>用串口监视器看是否打印了开机字样，判断是主板问题还是屏幕接线问题。</li>
+    </ul>
+  </details>
+  <details><summary>OLED 副屏黑屏</summary>
+    检查 SDA(6)、SCL(7) 有没有插反；VCC 接 3V3、GND 接好。两根信号线对调一下试试。
+  </details>
+  <details><summary>按键没反应 / 按键错位</summary>
+    键盘 8 根线里，把 4 根"行线"和 4 根"列线"整体对调试试；或确认行接 1/2/3/5、列接 14/15/16/17，顺序别乱。
+  </details>
+  <details><summary>蜂鸣器不响</summary>
+    确认是<b>无源</b>蜂鸣器；信号脚接 GPIO18；VCC 接 3V3。有源蜂鸣器换不出曲调，要换无源的。
+  </details>
+  <details><summary>钢琴游戏没声音 / 听不到曲子</summary>
+    这是正常机制：钢琴<b>只有在你按中下落的音符时才发声</b>，没有自动伴奏。音符落到底部白色判定线那一刻按对应轨道键（1/2/3/4 或 A/B/C/D）才会响并得分。判定窗口和下落速度已调宽松，对着判定线按即可。完全没声还要确认蜂鸣器本身正常（见上一条）。
+  </details>
+  <details><summary>飞机大战按 9 不射击</summary>
+    已修复。新版固件里 9 键和 0/# 都能射击，按一下发一发。如果还不行，先用键盘自检确认 9 键正常（见键盘相关条目），并确保烧的是最新固件。
+  </details>
+  <details><summary>编译失败 FAILED</summary>
+    多半是库没下全。保持联网，再点一次 Build。仍失败就把终端红色报错文字复制出来查。
+  </details>
+
+  <div class="tip"><span class="tag">小提醒</span>项目自带的 <code>README.md</code> 里有一份引脚表，但和实际程序代码 (<code>config.h</code>) <b>不一致</b>。<b>请以本教程（即代码里的真实引脚）为准</b>，不要照 README 那张表接线。</div>
+</section>
+
+<footer>
+  ESP32-S3 学习游戏一体机 · 接线依据：<code>include/config.h</code> 与 <code>diagram.json</code>（已在 Wokwi 模拟器验证）<br>
+  慢慢接、勤核对，祝你一次点亮 🎮
+</footer>
+
+</div>
+</body>
+</html>
