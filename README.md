@@ -1,6 +1,7 @@
 # ESP32-S3 多功能学习游戏机
 
 基于 **ESP32-S3-DevKitC-1** 的掌上学习与娱乐一体机，集成 **7 款游戏** + **3 个学习模块**，双屏显示（彩色 TFT + OLED），矩阵键盘操控，蜂鸣器音效。支持 Wokwi 云端仿真与实物搭建。
+核心代码在文件夹esp32-s3-devkict-1，项目代码主要在vscode中完成，需要安装woki和platformIO插件，开发过程适用Claude code辅助。
 
 ---
 
